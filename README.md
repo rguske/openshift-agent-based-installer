@@ -1,7 +1,6 @@
-# Installation Notes rguske-ocp1
+# Installing OpenShift using the Agent-Based Installer
 
 [Docs](https://docs.redhat.com/en/documentation/openshift_container_platform/4.17/html/installing_an_on-premise_cluster_with_the_agent-based_installer/preparing-to-install-with-agent-based-installer#agent-based-installer-recommended-resources_preparing-to-install-with-agent-based-installer)
-
 
 > In the install-config.yaml, specify the platform on which to perform the installation. The following platforms are supported:
 >
@@ -17,11 +16,14 @@ Review the information in the guidelines for deploying OpenShift Container Platf
 
 ## Preperations
 
+Setup a Bastion Host using e.g RHEL9.
+
 On the bastion host, download the cli's:
 
 `curl -LO <url>`
-- https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.17.6/openshift-install-rhel9-amd64.tar.gz
-- https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.17.6/openshift-client-linux-amd64-rhel9-4.17.6.tar.gz
+
+- [openshift-install-rhel9](https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.17.6/openshift-install-rhel9-amd64.tar.gz)
+- [openshift-client-linux-amd64](https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.17.6/openshift-client-linux-amd64-rhel9-4.17.6.tar.gz)
 
 Unpack the `.gz`files and copy them into your path:
 
@@ -34,31 +36,9 @@ cp oc /usr/local/bin/
 cp kubectl /usr/local/bin/
 ```
 
-## Run a `httpd` webserver on the bastion
-
-```bash
-dnf install httpd
-sudo systemctl enable --now httpd
-sudo firewall-cmd --permanent --add-service=http
-sudo firewall-cmd --reload
-sudo firewall-cmd --list-all
-```
-
-Validate the service is running:
-
-```bash
-sudo ss -tuln | grep :80
-curl -I http://localhost
-sudo tail -f /var/log/httpd/error_log
-```
-
-On Windows:
-
-Try browings the website from the browser. Alternatively, you can use the telnet <server-ip> 80 command to check the website.
-
 ## Validation via RHEL Live iso
 
-Download Live-iso RHEL
+In order to get the nic interface names of your servers, it could be helpful to quickly run a live-iso RHEL.
 
 `curl -LO https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.17/latest/rhcos-4.17.2-x86_64-live.x86_64.iso`
 
@@ -286,11 +266,39 @@ Create the install-config.yaml and agent-install.yaml file.
 
 Run `openshift-install agent create image --dir conf/`
 
-Mount the iso on the machines (BM or VM).
+Mount the `agent.x86_64.iso` on the machines (BM or VM).
 
-Boot the machines and wait.
+Boot the machines and wait until the installation is done.
 
 Validate the installer progress using `openshift-install wait-for install-complete --dir conf/`
+
+## Run a `httpd` webserver on the bastion to share the iso
+
+Depending on your environment, providing the created iso can be cumbersome.
+
+One quick and easy way could be by making it downloadable via a webserver.
+
+Install `httpd` on the bastion host.
+
+```bash
+dnf install httpd
+sudo systemctl enable --now httpd
+sudo firewall-cmd --permanent --add-service=http
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-all
+```
+
+Validate the service is running:
+
+```bash
+sudo ss -tuln | grep :80
+curl -I http://localhost
+sudo tail -f /var/log/httpd/error_log
+```
+
+Copy the created iso into `/var/www/html/`.
+
+Download the iso by using e.g. `curl -LO http://<bastion-name/ip>/agent.x86_64.iso` or `wget`.
 
 ## Connect to OCP
 
