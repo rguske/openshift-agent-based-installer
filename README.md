@@ -307,4 +307,4 @@ Validate the installer progress using `openshift-install wait-for install-comple
 
 Remove the Agent cache dir `rm -rf /home/rguske/.cache/agent`
 
-`ssh -l core rguske-ocp1-cp1.rguske.coe.muc.redhat.com`
+`ssh -l core ocp1-cp1.rguske.coe.muc.redhat.com`
