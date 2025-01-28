@@ -1,6 +1,38 @@
 # Installing OpenShift using the Agent-Based Installer
 
-[Docs](https://docs.redhat.com/en/documentation/openshift_container_platform/4.17/html/installing_an_on-premise_cluster_with_the_agent-based_installer/preparing-to-install-with-agent-based-installer#agent-based-installer-recommended-resources_preparing-to-install-with-agent-based-installer)
+The Agent-based installation comprises a bootable ISO that contains the Assisted discovery agent and the Assisted Service. Both are required to perform the cluster installation, but the latter runs on only one of the hosts.
+
+The openshift-install agent create image subcommand generates an ephemeral ISO based on the inputs that you provide. You can choose to provide inputs through the following manifests:
+
+Preferred:
+
+`install-config.yaml`
+
+`agent-config.yaml`
+
+Optional: ZTP manifests
+
+`cluster-manifests/cluster-deployment.yaml`
+
+`cluster-manifests/agent-cluster-install.yaml`
+
+`cluster-manifests/pull-secret.yaml`
+
+`cluster-manifests/infraenv.yaml`
+
+`cluster-manifests/cluster-image-set.yaml`
+
+`cluster-manifests/nmstateconfig.yaml`
+
+`mirror/registries.conf`
+
+`mirror/ca-bundle.crt`
+
+One of the control plane hosts runs the Assisted Service at the start of the boot process and eventually becomes the bootstrap host. This node is called the rendezvous host (node 0). The Assisted Service ensures that all the hosts meet the requirements and triggers an OpenShift Container Platform cluster deployment. All the nodes have the Red Hat Enterprise Linux CoreOS (RHCOS) image written to the disk. The non-bootstrap nodes reboot and initiate a cluster deployment. Once the nodes are rebooted, the rendezvous host reboots and joins the cluster. The bootstrapping is complete and the cluster is deployed.
+
+![node-installation-workflow](assets/node-installation-worklflow.png)
+
+[Official Documentation - OCP Installation using the Agent-Based Installer](https://docs.redhat.com/en/documentation/openshift_container_platform/4.17/html/installing_an_on-premise_cluster_with_the_agent-based_installer/preparing-to-install-with-agent-based-installer#agent-based-installer-recommended-resources_preparing-to-install-with-agent-based-installer)
 
 > In the install-config.yaml, specify the platform on which to perform the installation. The following platforms are supported:
 >
