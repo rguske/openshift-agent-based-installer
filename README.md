@@ -1,5 +1,7 @@
 # Installing OpenShift using the Agent-Based Installer
 
+⚠️ WIP
+
 The Agent-based installation comprises a bootable ISO that contains the Assisted discovery agent and the Assisted Service. Both are required to perform the cluster installation, but the latter runs on only one of the hosts.
 
 The openshift-install agent create image subcommand generates an ephemeral ISO based on the inputs that you provide. You can choose to provide inputs through the following manifests:
