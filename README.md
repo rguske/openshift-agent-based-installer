@@ -4,6 +4,27 @@
 
 The Agent-based installation comprises a bootable ISO that contains the Assisted discovery agent and the Assisted Service. Both are required to perform the cluster installation, but the latter runs on only one of the hosts.
 
+- [Installing OpenShift using the Agent-Based Installer](#installing-openshift-using-the-agent-based-installer)
+  - [Installation Information](#installation-information)
+    - [Configurable Manifest files](#configurable-manifest-files)
+    - [Bootstrapping the OpenShift Cluster](#bootstrapping-the-openshift-cluster)
+    - [Different Platform Types](#different-platform-types)
+  - [Cluster Preperations](#cluster-preperations)
+    - [Run a Bastion Host](#run-a-bastion-host)
+    - [NIC name validation using a RHEL Live Iso](#nic-name-validation-using-a-rhel-live-iso)
+    - [Bastion Host Preperation](#bastion-host-preperation)
+    - [Setting up VMs on vSphere](#setting-up-vms-on-vsphere)
+  - [Manifest Configurations](#manifest-configurations)
+  - [Create the Agent Iso](#create-the-agent-iso)
+    - [Boot from Iso](#boot-from-iso)
+  - [Run a `httpd` Webserver on the Bastion to share the Iso](#run-a-httpd-webserver-on-the-bastion-to-share-the-iso)
+  - [Connect to OCP Cluster](#connect-to-ocp-cluster)
+  - [Troubleshooting](#troubleshooting)
+
+## Installation Information
+
+### Configurable Manifest files
+
 The openshift-install agent create image subcommand generates an ephemeral ISO based on the inputs that you provide. You can choose to provide inputs through the following manifests:
 
 Preferred:
@@ -30,11 +51,15 @@ Optional: ZTP manifests
 
 `mirror/ca-bundle.crt`
 
+### Bootstrapping the OpenShift Cluster
+
 One of the control plane hosts runs the Assisted Service at the start of the boot process and eventually becomes the bootstrap host. This node is called the rendezvous host (node 0). The Assisted Service ensures that all the hosts meet the requirements and triggers an OpenShift Container Platform cluster deployment. All the nodes have the Red Hat Enterprise Linux CoreOS (RHCOS) image written to the disk. The non-bootstrap nodes reboot and initiate a cluster deployment. Once the nodes are rebooted, the rendezvous host reboots and joins the cluster. The bootstrapping is complete and the cluster is deployed.
 
 ![node-installation-workflow](assets/node-installation-worklflow.png)
 
 [Official Documentation - OCP Installation using the Agent-Based Installer](https://docs.redhat.com/en/documentation/openshift_container_platform/4.17/html/installing_an_on-premise_cluster_with_the_agent-based_installer/preparing-to-install-with-agent-based-installer#agent-based-installer-recommended-resources_preparing-to-install-with-agent-based-installer)
+
+### Different Platform Types
 
 > In the install-config.yaml, specify the platform on which to perform the installation. The following platforms are supported:
 >
@@ -48,7 +73,9 @@ One of the control plane hosts runs the Assisted Service at the start of the boo
 > The none option requires the provision of DNS name resolution and load balancing infrastructure in your cluster. See Requirements for a cluster using the platform "none" option in the "Additional resources" section for more information.
 Review the information in the guidelines for deploying OpenShift Container Platform on non-tested platforms before you attempt to install an OpenShift Container Platform cluster in virtualized or cloud environments.
 
-## Preperations
+## Cluster Preperations
+
+### Run a Bastion Host
 
 Setup a Bastion Host using e.g RHEL9.
 
@@ -70,30 +97,30 @@ cp oc /usr/local/bin/
 cp kubectl /usr/local/bin/
 ```
 
-## Validation via RHEL Live iso
+### NIC name validation using a RHEL Live Iso
 
 In order to get the nic interface names of your servers, it could be helpful to quickly run a live-iso RHEL.
 
 `curl -LO https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/4.17/latest/rhcos-4.17.2-x86_64-live.x86_64.iso`
 
-## Bastion Host Preperation
+### Bastion Host Preperation
 
 `cat ~/.ssh/id_ed25519.pub | ssh rguske@rguske-bastion.rguske.coe.muc.redhat.com "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && chmod 700 ~/.ssh"`
 
 `sudo subscription-manager register --username  --password `
 
-## Cluster Preperations
+### Setting up VMs on vSphere
 
-* created 3 Control-Plane nodes
-* created 2 Worker-Nodes
+- created 3 Control-Plane nodes
+- created 2 Worker-Nodes
 
 **IMPORTANT** configure the Advanced Parameters `disk.EnableUUID = True` when VMs got created manually on vSphere.
 
 It'll be a HA OCP cluster. Three types of clusters are supported:
 
-* Single-Node cluster (SNO)
-* Compact cluster (three nodes - master and worker in one)
-* HA cluster (three cp nodes and three worker nodes)
+- Single-Node cluster (SNO)
+- Compact cluster (three nodes - master and worker in one)
+- HA cluster (three cp nodes and three worker nodes)
 
 Collecting the necessary nic information:
 
@@ -107,7 +134,7 @@ Collecting the necessary nic information:
 
 BaseDomain: rguske.coe.muc.redhat.com
 
-## Configurations
+## Manifest Configurations
 
 `agent-config.yaml`
 
@@ -292,7 +319,7 @@ sshKey: 'ssh-rsa AAAAB3...'
 EOF
 ```
 
-## Create Agent iso
+## Create the Agent Iso
 
 `mkdir conf`
 
@@ -300,17 +327,16 @@ Create the install-config.yaml and agent-install.yaml file.
 
 Run `openshift-install agent create image --dir conf/`
 
-Mount the `agent.x86_64.iso` on the machines (BM or VM).
-
-Boot the machines and wait until the installation is done.
-
 Validate the installer progress using `openshift-install wait-for install-complete --dir conf/`
 
-## Run a `httpd` webserver on the bastion to share the iso
 
-Depending on your environment, providing the created iso can be cumbersome.
+### Boot from Iso
 
-One quick and easy way could be by making it downloadable via a webserver.
+Mount the `agent.x86_64.iso` on the machines (BM or VM) and boot the machines and wait until the installation is done.
+
+## Run a `httpd` Webserver on the Bastion to share the Iso
+
+Depending on your environment, providing the created iso can be cumbersome. One quick and easy way could be by making it downloadable via a webserver.
 
 Install `httpd` on the bastion host.
 
@@ -334,7 +360,7 @@ Copy the created iso into `/var/www/html/`.
 
 Download the iso by using e.g. `curl -LO http://<bastion-name/ip>/agent.x86_64.iso` or `wget`.
 
-## Connect to OCP
+## Connect to OCP Cluster
 
 `export KUBECONFIG=auth/kubeconfig`
 
@@ -344,9 +370,8 @@ Download the iso by using e.g. `curl -LO http://<bastion-name/ip>/agent.x86_64.i
 
 `kubectl get nodes`
 
-
 ## Troubleshooting
 
 Remove the Agent cache dir `rm -rf /home/rguske/.cache/agent`
 
-`ssh -l core ocp1-cp1.rguske.coe.muc.redhat.com`
+Ssh to one of the nodes: `ssh -l core ocp1-cp1.rguske.coe.muc.redhat.com`
